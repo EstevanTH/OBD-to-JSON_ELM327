@@ -22,6 +22,6 @@ serialShowSentBytes = False
 #~ For debuggers: show everything that is received from the ELM327?
 serialShowReceivedBytes = False
 #~ What OBD communication bus should be used? 0 is for auto-detection, others are described in the ELM327 manual.
-ATSP = b'A7'
+ATSP = b'0'
 #~ Show a message when an incorrect result is received?
 obdShowIncorrectResult = False
