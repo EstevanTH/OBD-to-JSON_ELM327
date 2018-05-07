@@ -2,7 +2,7 @@
 Currently the length argument is not optional. DEFAULT should match the payload length of the OBD answer.
 
 Synopsis:
-	obd.setPidResponseLength( integer pid, integer length=DEFAULT, bool returnByteArray=true )
+	obd.setPidResponseLength( int pid, int length=DEFAULT, bool returnByteArray=true )
 """
 
 obd.setPidResponseLength( 0x33, 1, False ) # BAROMETRIC PRESSURE
@@ -18,12 +18,12 @@ obd.setPidResponseLength( 0x0B, 1, False ) # INTAKE MANIFOLD ABSOLUTE PRESSURE
 """ Setup of functions that handle receiving OBD answers ###
 
 Synopses:
-	obd.setPidResponseCallback( integer pid, function receivedCallback )
-	receivedCallback( integer pid, array:byte data )
-	receivedCallback( integer pid, integer    data )
-	obd.getLastResponseData( integer pid )
-	obd.getCurrentOutputData( string key )
-	obd.setCurrentOutputData( string key, mixed outputData )
+	obd.setPidResponseCallback( int pid, function receivedCallback )
+	receivedCallback( int pid, bytes   data )
+	receivedCallback( int pid, int data )
+	obd.getLastResponseData( int pid )
+	obd.getCurrentOutputData( bytes key )
+	obd.setCurrentOutputData( bytes key, mixed outputData )
 """
 
 # BAROMETRIC PRESSURE
@@ -87,7 +87,7 @@ obd.setPidResponseCallback( 0x0B, callback )
 
 Synopses:
 	obd.resetSequence()
-	obd.addPidToSequence( integer pid )
+	obd.addPidToSequence( int pid )
 """
 
 obd.resetSequence()
