@@ -31,11 +31,27 @@ def execfileIfNeeded( filename, globalEnv, fileInfo ):
 	else:
 		return False
 
-# Convert a dict object (bytes keys and numeric values) into a JSON object as bytes, with JSONP support
+# Convert a dict object (bytes keys) into a JSON object as bytes, with JSONP support
 def simpleDictionaryToJSON( source, callbackJSONP=None ):
 	r = []
 	for key in source.keys():
-		r.append( b'"'+key+b'":'+str( source[key] ).encode( "ascii" ) )
+		dataValue = source[key]
+		dataType = type( dataValue )
+		if dataType is float or dataType is int:
+			r.append( b'"'+key+b'":'+str( dataValue ).encode( "ascii" ) )
+		elif dataType is bool:
+			if dataValue:
+				r.append( b'"'+key+b'":true' )
+			else:
+				r.append( b'"'+key+b'":false' )
+		elif dataValue is None:
+			r.append( b'"'+key+b'":null' )
+		else:
+			if dataType is bytes or dataType is bytearray:
+				pass
+			else:
+				dataValue = str( dataValue ).encode( "utf_8", "replace" )
+			r.append( b'"'+key+b'":"'+dataValue.replace( b'"',  b'\\"' )+b'"' )
 	if callbackJSONP is None:
 		return b'{\n'+b',\n'.join( r )+b'\n}'
 	else:
