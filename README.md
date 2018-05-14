@@ -9,6 +9,7 @@ This program reads OBD-II / EOBD values from an ELM327 chip (widely available) a
 - Configuration is live-refreshed (no restart needed)
 - Possibility to run multiple HTTP servers for better performance
 - Nice console output to easily debug problems
+- Optional CSV logging on updated output data
 
 ## Requirements
 - An OBD scanner featuring an ELM327 chip (preferably connected through bare RS-232 or USB converter)

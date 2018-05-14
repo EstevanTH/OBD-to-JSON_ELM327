@@ -1,3 +1,8 @@
+###
+# obd.setCurrentOutputData() resets the log file if the key (= column name) has not been seen yet.
+###
+
+
 """ Declaration of the format of PIDs ###
 Currently the length argument is not optional. DEFAULT should match the payload length of the OBD answer.
 

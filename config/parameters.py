@@ -1,6 +1,6 @@
 ### HTTP servers ###
-#- What IP address and TCP port do you need to bind each server to?
-#- For how many seconds should unrefreshed data remain valid? 0.0 means that data never expire. After the delay, the server returns the HTTP status 504 Gateway Time-out.
+#~ What IP address and TCP port do you need to bind each server to?
+#~ For how many seconds should unrefreshed data remain valid? 0.0 means that data never expire. After the delay, the server returns the HTTP status 504 Gateway Time-out.
 httpBindings = [
 	{"address": "127.0.0.1", "port": 8327, "cacheExpire": 2.0},
 	{"address": "0.0.0.0", "port": 8327, "cacheExpire": 2.0},
@@ -25,3 +25,7 @@ serialShowReceivedBytes = False
 ATSP = b'0'
 #~ Show a message when an incorrect result is received?
 obdShowIncorrectResult = False
+#~ Log to a CSV file every time obd.setCurrentOutputData() is called in the sequence? Enter a filename or None.
+obdLogOutputData = None
+#from datetime import datetime
+#obdLogOutputData = "logObdData "+datetime.now().strftime( "%Y-%m-%d %H-%M-%S" )+".csv"
