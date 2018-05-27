@@ -12,6 +12,8 @@ outputList = None
 outputListLock = None
 
 class OBDRelayHTTPServerThread( threading.Thread ):
+	daemon = True # exit immediatly on program exit
+	
 	def __init__( self, vehicleData, ipAddress="127.0.0.1", tcpPort=8327, cacheExpire=0.0 ):
 		threading.Thread.__init__( self )
 		global outputList
@@ -21,7 +23,6 @@ class OBDRelayHTTPServerThread( threading.Thread ):
 		self.ipAddress = ipAddress
 		self.tcpPort = tcpPort
 		self.cacheExpire = cacheExpire
-		self.daemon = True # exit immediatly on program exit
 	
 	def setCacheExpire( self, cacheExpire=0.0 ):
 		self.cacheExpire = cacheExpire

@@ -21,9 +21,15 @@ for httpBinding in parameters["httpBindings"]:
 	httpd.start()
 del httpd
 
+# Run the OBD logger
+from OBDLogging import OBDLoggingThread
+vehicleInterfaceLogger = OBDLoggingThread()
+vehicleInterfaceLogger.start()
+
 # Run the ELM327 manager
 from OBDRelayELM327 import OBDRelayELM327Thread
 vehicleInterface = OBDRelayELM327Thread( vehicleData )
+vehicleInterface.attachLoggingThread( vehicleInterfaceLogger )
 vehicleInterface.start()
 
 # Reload the parameters
@@ -51,4 +57,4 @@ try:
 		sleep( 3 )
 		reloadParameters()
 except KeyboardInterrupt:
-	pass
+	vehicleInterfaceLogger.terminate()

@@ -24,20 +24,25 @@ outputListLock = None
 MAX_OBD_NEGOCIATION_TIME = 20
 
 class OBDRelayELM327Thread( threading.Thread ):
+	daemon = True # exit immediatly on program exit
+	
 	def __init__( self, vehicleData ):
 		threading.Thread.__init__( self )
+		self.parametersFileInfo = {}
+		self.sequenceFileInfo = {}
+		self.pidResponseCallbacks = {}
+		self.lastResponseDatas = {}
 		global outputList
 		outputList = vehicleData[0]
 		global outputListLock
 		outputListLock = vehicleData[1]
 		self.ser = None
-		self.daemon = True # exit immediatly on program exit
+		self.sequence = []
 	
-	parametersFileInfo = {}
-	logOutputData = None
-	logOutputDataFile = None
-	logOutputDataColumns = {}
-	logOutputDataColumnsOrder = []
+	logger = None
+	def attachLoggingThread( self, logger ):
+		self.logger = logger
+	
 	def reloadParameters( self ):
 		global parametersFile
 		parameters = {}
@@ -55,29 +60,10 @@ class OBDRelayELM327Thread( threading.Thread ):
 			if scannerATBRD>0xFF:
 				printT( "The parameter serialBaudRateDesired is set to an insufficient value!" )
 			self.scannerATBRD = b"ATBRD"+( b"%.2X"%round( 4000000/self.serialBaudRateDesired ) )+b"\x0D" # desired baudrate
-			obdLogOutputData = parameters["obdLogOutputData"]
-			if obdLogOutputData!=self.logOutputData:
-				self.logOutputData = obdLogOutputData
-				# Close any open file:
-				if self.logOutputDataFile is not None:
-					try:
-						self.logOutputDataFile.close()
-					except:
-						pass
-					self.logOutputDataFile = None
-				# Attempt to open file:
-				if self.logOutputData is not None:
-					try:
-						self.logOutputDataFile = open( self.logOutputData, mode="wb" )
-					except Exception as e:
-						self.logOutputDataFile = None
-						printT( "Unable to open the obdLogOutputData file:", e )
-				# Cleanup for clean start:
-				self.logOutputDataColumns = {}
-				self.logOutputDataColumnsOrder = []
+			if self.logger is not None:
+				self.logger.setParameters( parameters )
 			printT( "[OBDRelayELM327.py] Parameters have been reloaded." )
 	
-	sequenceFileInfo = {}
 	def reloadSequence( self ):
 		global sequenceFile
 		if execfileIfNeeded( sequenceFile, {"obd":self}, self.sequenceFileInfo ):
@@ -247,10 +233,8 @@ class OBDRelayELM327Thread( threading.Thread ):
 	def setPidResponseLength( self, pid, length, returnByteArray=True ):
 		self.pidResponseLengths[pid] = length
 		self.pidResponseReturnByteArrays[pid] = returnByteArray
-	pidResponseCallbacks = {}
 	def setPidResponseCallback( self, pid, receivedCallback ):
 		self.pidResponseCallbacks[pid] = receivedCallback
-	lastResponseDatas = {}
 	def getLastResponseData( self, pid ):
 		value = None
 		try:
@@ -272,58 +256,18 @@ class OBDRelayELM327Thread( threading.Thread ):
 	def setCurrentOutputData( self, key, outputData ):
 		global outputList
 		global outputListLock
-		now = time()
 		outputListLock.acquire()
+		now = time()
 		outputList[b"relaytime"] = now
 		outputList[key] = outputData
 		outputListLock.release()
 		# Logging:
-		if self.logOutputDataFile is not None:
-			try:
-				if key not in self.logOutputDataColumns:
-					self.logOutputDataColumns[key] = True
-					self.logOutputDataColumnsOrder = list( self.logOutputDataColumns.keys() )
-					self.logOutputDataColumnsOrder.sort()
-					self.logOutputDataFile.seek( 0 )
-					self.logOutputDataFile.truncate()
-					self.logOutputDataFile.write( b'"Time","Updated","'+b'","'.join( self.logOutputDataColumnsOrder )+b'"\x0D\x0A' )
-				CSVDataColumns = [b'"'+str( datetime.now() ).encode( "ascii", "replace" )+b'"', b'"'+key+b'"']
-				for key1 in self.logOutputDataColumnsOrder:
-					dataValue = outputList[key1]
-					dataType = type( dataValue )
-					CSVDataColumn = '"#"'
-					try:
-						if dataType is float or dataType is int:
-							CSVDataColumn = str( dataValue ).encode( "ascii" )
-						elif dataType is bool:
-							if dataValue:
-								CSVDataColumn = b'1'
-							else:
-								CSVDataColumn = b'0'
-						elif dataValue is None:
-							CSVDataColumn = b'""'
-						else:
-							if dataType is bytes or dataType is bytearray:
-								pass
-							else:
-								dataValue = str( dataValue ).encode( "utf_8", "replace" )
-							CSVDataColumn = b'"'+dataValue.replace( b'"',  b"'" )+b'"'
-					except:
-						pass
-					CSVDataColumns.append( CSVDataColumn )
-				self.logOutputDataFile.write( b','.join( CSVDataColumns )+b'\x0D\x0A' )
-			except Exception as e:
-				printT( "Logging error, stopping:", e )
-				try:
-					logOutputDataFile = self.logOutputDataFile
-					self.logOutputDataFile = None
-					logOutputDataFile.close()
-				except:
-					pass
-	sequence = []
+		if self.logger is not None:
+			self.logger.logData( key, outputData )
+	sequence = None
 	pidToCommand = {} # formatted PID requests for ELM327
 	def resetSequence( self ):
-		self.sequence.clear()
+		self.sequence = []
 	def addPidToSequence( self, pid ):
 		self.sequence.append( pid )
 		self.pidToCommand[pid] = b"01"+( b"%.2X"%pid )+b"\x0D"

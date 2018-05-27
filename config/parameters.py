@@ -29,3 +29,5 @@ obdShowIncorrectResult = False
 obdLogOutputData = None
 #from datetime import datetime
 #obdLogOutputData = "logObdData "+datetime.now().strftime( "%Y-%m-%d %H-%M-%S" )+".csv"
+#~ Compact logging format: CSV logging only fills cells with updated values. The updated column does not have its name displayed in a specific cell.
+obdLogOutputDataCompact = False
