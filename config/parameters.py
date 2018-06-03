@@ -28,6 +28,6 @@ obdShowIncorrectResult = False
 #~ Log to a CSV file every time obd.setCurrentOutputData() is called in the sequence? Enter a filename or None.
 obdLogOutputData = None
 #from datetime import datetime
-#obdLogOutputData = "logObdData "+datetime.now().strftime( "%Y-%m-%d %H-%M-%S" )+".csv"
+#obdLogOutputData = "logs/logObdData "+datetime.now().strftime( "%Y-%m-%d %H-%M-%S" )+".csv"
 #~ Compact logging format: CSV logging only fills cells with updated values. The updated column does not have its name displayed in a specific cell.
 obdLogOutputDataCompact = False
