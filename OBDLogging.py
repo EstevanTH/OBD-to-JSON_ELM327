@@ -85,7 +85,11 @@ class OBDLoggingThread( threading.Thread ):
 							self.logOutputDataFile.seek( 0 )
 							self.logOutputDataFile.truncate()
 							self.logOutputDataFile.write( b'"Time","Updated","'+b'","'.join( self.logOutputDataColumnsOrder )+b'"\x0D\x0A' )
-						CSVDataColumns = [b'"'+str( datetime.now() ).encode( "ascii", "replace" )+b'"', b'"'+key+b'"']
+						CSVDataColumns = [b'"'+str( datetime.now() ).encode( "ascii", "replace" )+b'"']
+						if self.logOutputDataCompact:
+							CSVDataColumns.append( b'' )
+						else:
+							CSVDataColumns.append( b'"'+key+b'"' )
 						for key1 in self.logOutputDataColumnsOrder:
 							dataValue = outputData
 							dataType = type( dataValue )
