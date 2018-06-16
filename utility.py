@@ -13,23 +13,35 @@ def execfile( filename, globalEnv ):
 
 # Include a Python script if it has been modified
 from os import stat
+from traceback import format_exc
 def execfileIfNeeded( filename, globalEnv, fileInfo ):
-	if "date" not in fileInfo:
-		fileInfo["date"] = None
-	if "size" not in fileInfo:
-		fileInfo["size"] = None
-	fileInfoCurrent = stat( filename )
-	if fileInfoCurrent.st_size!=fileInfo["size"] or fileInfoCurrent.st_mtime!=fileInfo["date"]:
-		if ( fileInfo["date"] is None ) or ( fileInfo["size"] is None ):
-			printT( "Loading "+filename )
+	firstTimeLoaded = ( len(fileInfo)==0 )
+	try:
+		if "date" not in fileInfo:
+			fileInfo["date"] = None
+		if "size" not in fileInfo:
+			fileInfo["size"] = None
+		fileInfoCurrent = stat( filename )
+		if fileInfoCurrent.st_size!=fileInfo["size"] or fileInfoCurrent.st_mtime!=fileInfo["date"]:
+			if ( fileInfo["date"] is None ) or ( fileInfo["size"] is None ):
+				printT( "Loading "+filename )
+			else:
+				printT( "Reloading "+filename )
+			fileInfo["size"] = fileInfoCurrent.st_size
+			fileInfo["date"] = fileInfoCurrent.st_mtime
+			try:
+				execfile( filename, globalEnv )
+			except Exception as e:
+				if firstTimeLoaded:
+					raise e
+				else:
+					printT( format_exc() )
+			return True
 		else:
-			printT( "Reloading "+filename )
-		fileInfo["size"] = fileInfoCurrent.st_size
-		fileInfo["date"] = fileInfoCurrent.st_mtime
-		execfile( filename, globalEnv )
-		return True
-	else:
-		return False
+			return False
+	except FileNotFoundError as e:
+		if firstTimeLoaded:
+			raise e
 
 # Convert a dict object (bytes keys) into a JSON object as bytes, with JSONP support
 def simpleDictionaryToJSON( source, callbackJSONP=None ):

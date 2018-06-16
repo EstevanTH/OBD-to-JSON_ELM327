@@ -12,6 +12,7 @@ from time import time
 from traceback import format_exc
 from os import system
 
+from utility import execfile
 from utility import execfileIfNeeded
 from utility import printT
 import inspect
@@ -68,6 +69,10 @@ class OBDRelayELM327Thread( threading.Thread ):
 		global sequenceFile
 		if execfileIfNeeded( sequenceFile, {"obd":self}, self.sequenceFileInfo ):
 			printT( "The OBD sequence has been reloaded." )
+			if self.logger is not None:
+				parameters = {}
+				execfile( parametersFile, parameters )
+				self.logger.setParameters( parameters )
 	
 	def write( self, data ):
 		if self.serialShowSentBytes:
