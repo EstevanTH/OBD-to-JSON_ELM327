@@ -46,10 +46,10 @@ class OBDLoggingThread( threading.Thread ):
 		self.logOutputDataCompact = parameters["obdLogOutputDataCompact"]
 		self.parametersLock.release()
 	
-	def logData( self, key, outputData ):
+	def logData( self, key, outputData, dataDateTime ):
 		if self.logOutputDataFile is not None:
 			self.pendingDataLock.acquire()
-			self.pendingData.append( (key,outputData) )
+			self.pendingData.append( (key,outputData,dataDateTime) )
 			self.pendingDataLock.release()
 			try:
 				self.continueProcessLock.release()
@@ -77,6 +77,7 @@ class OBDLoggingThread( threading.Thread ):
 				for onePendingData in pendingData:
 					key = onePendingData[0]
 					outputData = onePendingData[1]
+					dataDateTime = onePendingData[2]
 					try:
 						if key not in self.logOutputDataColumns:
 							self.logOutputDataColumns[key] = True
@@ -84,8 +85,12 @@ class OBDLoggingThread( threading.Thread ):
 							self.logOutputDataColumnsOrder.sort()
 							self.logOutputDataFile.seek( 0 )
 							self.logOutputDataFile.truncate()
-							self.logOutputDataFile.write( b'"Time","Updated","'+b'","'.join( self.logOutputDataColumnsOrder )+b'"\x0D\x0A' )
-						CSVDataColumns = [b'"'+str( datetime.now() ).encode( "ascii", "replace" )+b'"']
+							self.logOutputDataFile.write( b'"Time","Elapsed","Updated","'+b'","'.join( self.logOutputDataColumnsOrder )+b'"\x0D\x0A' )
+							self.startDateTime = datetime.now()
+						CSVDataColumns = [
+							b'"'+str( dataDateTime ).encode( "ascii", "replace" )+b'"',
+							str( ( dataDateTime-self.startDateTime ).total_seconds() ).encode( "ascii" ),
+						]
 						if self.logOutputDataCompact:
 							CSVDataColumns.append( b'' )
 						else:

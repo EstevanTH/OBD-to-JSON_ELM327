@@ -67,7 +67,12 @@ class OBDRelayELM327Thread( threading.Thread ):
 	
 	def reloadSequence( self ):
 		global sequenceFile
+		global outputList
+		global outputListLock
 		if execfileIfNeeded( sequenceFile, {"obd":self}, self.sequenceFileInfo ):
+			outputListLock.acquire()
+			outputList.clear() # erase any obsolete JSON data
+			outputListLock.release()
 			printT( "The OBD sequence has been reloaded." )
 			if self.logger is not None:
 				parameters = {}
@@ -261,6 +266,7 @@ class OBDRelayELM327Thread( threading.Thread ):
 	def setCurrentOutputData( self, key, outputData ):
 		global outputList
 		global outputListLock
+		dataDateTime = datetime.now()
 		outputListLock.acquire()
 		now = time()
 		outputList[b"relaytime"] = now
@@ -268,7 +274,7 @@ class OBDRelayELM327Thread( threading.Thread ):
 		outputListLock.release()
 		# Logging:
 		if self.logger is not None:
-			self.logger.logData( key, outputData )
+			self.logger.logData( key, outputData, dataDateTime )
 	sequence = None
 	pidToCommand = {} # formatted PID requests for ELM327
 	def resetSequence( self ):
