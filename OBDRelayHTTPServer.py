@@ -1,36 +1,75 @@
 import http.server
 import threading
 
-from http import HTTPStatus
 from io import BytesIO
-from shutil import copyfileobj
 from utility import simpleDictionaryToJSON
 from utility import printT
 from time import time
+from socketserver import ThreadingMixIn
+from websocket import WebSocketBadRequest, WebSocket
+
+try:
+	from http import HTTPStatus
+except ImportError:
+	import http.client as HTTPStatus # Python36 -> Python34
+
 
 outputList = None
 outputListLock = None
 
 
+class WebSocket_vehicle(WebSocket):
+	maxReceivedLen = 125 # only short frames
+	allowFramesBinary = False
+	allowFramesText = False
+	
+	def handleMessage( self, data ):
+		""" Incoming message handler: nothing allowed """
+		pass
+	
+	@classmethod
+	def broadcastValue( self, key, outputData ):
+		""" Broadcast a new value (as JSON) - possible bottleneck """
+		self.broadcastMessageText( simpleDictionaryToJSON( {
+			b"relaytime": time(),
+			key: outputData,
+		} ) )
+
+
 class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 	# Based on http.server.SimpleHTTPRequestHandler
 	server_version = "ELM327 OBD-II Relay"
+	protocol_version = "HTTP/1.1" # mandatory for WebSocket
+	runWebSocket = False
+	webSocketClass = None
 	
 	def do_GET( self ):
 		f = self.send_head()
-		if f:
+		try:
+			self.copyfile( f, self.wfile )
+		except ConnectionAbortedError:
+			return
+		f.close(); del f
+		
+		if self.runWebSocket:
 			try:
-				self.copyfile( f, self.wfile )
+				ws = self.webSocketClass( self )
+				ws.run()
 			except ConnectionAbortedError:
 				pass
-			f.close()
+			except StopIteration:
+				pass
+			except WebSocketBadRequest as e:
+				printT( repr( e ) )
+				return
 	
 	def do_HEAD( self ):
 		f = self.send_head( headersOnly=True )
-		if f:
-			f.close()
+		f.close(); del f
 	
 	def send_head( self, headersOnly=False ):
+		headers = {}
+		
 		if self.path=="/vehicle.json":
 			global outputList
 			global outputListLock
@@ -57,6 +96,13 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 				encoded = b"No available up-to-date data"
 				response = HTTPStatus.GATEWAY_TIMEOUT
 				contentType = "text/plain"
+		elif self.path=="/vehicle.ws":
+			self.webSocketClass = WebSocket_vehicle
+			info = WebSocket.prepareHeaders( self )
+			encoded = info["encoded"]
+			response = info["response"]
+			contentType = info["contentType"]
+			headers = info["headers"]
 		else:
 			encoded = b"Not found"
 			response = HTTPStatus.NOT_FOUND
@@ -66,20 +112,27 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 		f.write( encoded )
 		f.seek( 0 )
 		self.send_response( response )
-		self.send_header( "Content-type", contentType )
+		if contentType is not None:
+			self.send_header( "Content-type", contentType )
 		if headersOnly:
 			self.send_header( "Content-Length", "0" )
 		else:
 			self.send_header( "Content-Length", str( len( encoded ) ) )
+		for header in headers.items():
+			self.send_header( header[0], header[1] )
 		self.send_header( "Access-Control-Allow-Origin", "*" )
 		self.end_headers()
 		return f
 	
-	def copyfile( self, source, outputfile ):
-		copyfileobj( source, outputfile )
+	copyfile = http.server.SimpleHTTPRequestHandler.copyfile
 	
 	def log_request( self, code='-', size='-' ):
 		pass # no logging for successful requests
+
+
+class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
+	daemon_threads = True
+
 
 class OBDRelayHTTPServerThread( threading.Thread ):
 	daemon = True # exit immediatly on program exit
@@ -105,7 +158,7 @@ class OBDRelayHTTPServerThread( threading.Thread ):
 		}
 	
 	def run( self ):
-		httpd = http.server.HTTPServer( (self.ipAddress, self.tcpPort), OBDRelayHTTPRequestHandler )
+		httpd = ThreadedHTTPServer( (self.ipAddress, self.tcpPort), OBDRelayHTTPRequestHandler )
 		httpd.thread = self
 		printT( "OBDRelayHTTPServerThread started:", self.ipAddress, self.tcpPort )
 		httpd.serve_forever()

@@ -1,0 +1,6 @@
+body{
+	background-color: salmon;
+}
+body.connected{
+	background-color: lightgreen;
+}

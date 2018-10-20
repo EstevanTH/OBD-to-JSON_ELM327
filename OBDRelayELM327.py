@@ -11,6 +11,7 @@ from time import sleep
 from time import time
 from traceback import format_exc
 from os import system
+from OBDRelayHTTPServer import WebSocket_vehicle
 
 from utility import execfile
 from utility import execfileIfNeeded
@@ -60,7 +61,7 @@ class OBDRelayELM327Thread( threading.Thread ):
 			scannerATBRD = round( 4000000/self.serialBaudRateDesired )
 			if scannerATBRD>0xFF:
 				printT( "The parameter serialBaudRateDesired is set to an insufficient value!" )
-			self.scannerATBRD = b"ATBRD"+( b"%.2X"%round( 4000000/self.serialBaudRateDesired ) )+b"\x0D" # desired baudrate
+			self.scannerATBRD = b"ATBRD"+bytes( "%.2X"%round( 4000000/self.serialBaudRateDesired ), "ascii" )+b"\x0D" # desired baudrate
 			if self.logger is not None:
 				self.logger.setParameters( parameters )
 			printT( "[OBDRelayELM327.py] Parameters have been reloaded." )
@@ -70,9 +71,8 @@ class OBDRelayELM327Thread( threading.Thread ):
 		global outputList
 		global outputListLock
 		if execfileIfNeeded( sequenceFile, {"obd":self}, self.sequenceFileInfo ):
-			outputListLock.acquire()
-			outputList.clear() # erase any obsolete JSON data
-			outputListLock.release()
+			with outputListLock:
+				outputList.clear() # erase any obsolete JSON data
 			printT( "The OBD sequence has been reloaded." )
 			if self.logger is not None:
 				parameters = {}
@@ -256,22 +256,20 @@ class OBDRelayELM327Thread( threading.Thread ):
 		global outputList
 		global outputListLock
 		value = None
-		outputListLock.acquire()
-		try:
-			value = outputList[key]
-		except:
-			pass
-		outputListLock.release()
+		with outputListLock:
+			try:
+				value = outputList[key]
+			except:
+				pass
 		return value
 	def setCurrentOutputData( self, key, outputData ):
 		global outputList
 		global outputListLock
 		dataDateTime = datetime.now()
-		outputListLock.acquire()
-		now = time()
-		outputList[b"relaytime"] = now
-		outputList[key] = outputData
-		outputListLock.release()
+		WebSocket_vehicle.broadcastValue( key, outputData )
+		with outputListLock:
+			outputList[b"relaytime"] = time()
+			outputList[key] = outputData
 		# Logging:
 		if self.logger is not None:
 			self.logger.logData( key, outputData, dataDateTime )
@@ -281,7 +279,7 @@ class OBDRelayELM327Thread( threading.Thread ):
 		self.sequence = []
 	def addPidToSequence( self, pid ):
 		self.sequence.append( pid )
-		self.pidToCommand[pid] = b"01"+( b"%.2X"%pid )+b"\x0D"
+		self.pidToCommand[pid] = b"01"+bytes( "%.2X"%pid, "ascii" )+b"\x0D"
 	## End
 	
 	def handleOBDResult( self, resultLine ):

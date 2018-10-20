@@ -1,6 +1,9 @@
 # OBD to JSON Relay (ELM327)
 This program reads OBD-II / EOBD values from an ELM327 chip (widely available) and makes them available through an HTTP server, formatted as a JSON object. It is great for a web overlay on OBS Studio.
 
+News:
+* Oct 2018: Added high-performance WebSocket support
+
 ## Features
 - Designed for high frequency OBD readings
 - Customizable sequence of OBD readings
@@ -13,12 +16,12 @@ This program reads OBD-II / EOBD values from an ELM327 chip (widely available) a
 
 ## Requirements
 - An OBD scanner featuring an ELM327 chip (preferably connected through bare RS-232 or USB converter)
-- [Python 3.6 or greater](https://www.python.org/downloads/)
+- [Python 3.6 or greater, extended to Python3.4](https://www.python.org/downloads/)
 - [pySerial 3.4 or greater](https://github.com/pyserial/pyserial)
 - An OS supported by pySerial
 
 ## Instructions
-1. Install *Python*.
+1. Install *Python3*.
 1. Install *pySerial*.
 1. Edit the files `parameters.py` and `sequenceELM327.py` in the sub-directory `config`.
 1. When you are ready to start, run `main.py`.
