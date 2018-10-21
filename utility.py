@@ -68,3 +68,22 @@ def simpleDictionaryToJSON( source, callbackJSONP=None ):
 		return b'{\n'+b',\n'.join( r )+b'\n}'
 	else:
 		return callbackJSONP+b'({\n'+b',\n'.join( r )+b'\n});'
+
+from os import name as os_name
+isOsWindows = ( os_name=="nt" )
+
+from os import system as os_system
+if isOsWindows:
+	def setConsoleColorWindows( colorCode ):
+		os_system( "COLOR "+colorCode )
+	def setConsoleTitle( title ):
+		os_system( "TITLE "+title )
+	def clearConsole():
+		os_system( "CLS" )
+else:
+	def setConsoleColorWindows( colorCode ):
+		pass
+	def setConsoleTitle( title ):
+		pass
+	def clearConsole():
+		os_system( "clear" )

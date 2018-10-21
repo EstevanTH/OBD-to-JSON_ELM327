@@ -10,12 +10,14 @@ from datetime import datetime
 from time import sleep
 from time import time
 from traceback import format_exc
-from os import system
 from OBDRelayHTTPServer import WebSocket_vehicle
 
 from utility import execfile
 from utility import execfileIfNeeded
 from utility import printT
+from utility import setConsoleColorWindows
+from utility import setConsoleTitle
+
 import inspect
 parametersFile = inspect.getfile( inspect.currentframe() )+"/../config/parameters.py"
 sequenceFile   = inspect.getfile( inspect.currentframe() )+"/../config/sequenceELM327.py"
@@ -322,8 +324,8 @@ class OBDRelayELM327Thread( threading.Thread ):
 		self.ser = serial.Serial( port=None, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False, inter_byte_timeout=None, exclusive=True )
 		isFirstAttempt = True
 		while True:
-			system( "COLOR 4F" )
-			system( "TITLE ELM327: Disconnected" )
+			setConsoleColorWindows( "4F" )
+			setConsoleTitle( "ELM327: Disconnected" )
 			if self.ser.is_open:
 				self.ser.close()
 			if not isFirstAttempt:
@@ -339,6 +341,7 @@ class OBDRelayELM327Thread( threading.Thread ):
 					# Communication attempt
 					self.ser.baudrate = self.serialBaudRateInitial
 					self.ser.timeout = 0.5
+					printT( "Contacting the ELM327 chip..." )
 					connectionConfirmed = False
 					while not connectionConfirmed:
 						self.write( b"ATH\x0D" ) # command that does nothing
@@ -373,8 +376,8 @@ class OBDRelayELM327Thread( threading.Thread ):
 						if self.serialBaudRateDesiredForce:
 							raise Exception( "The desired baud rate could not be selected!" )
 					printT( "Connection established at "+str( self.ser.baudrate )+" b/s" )
-					system( "COLOR 2F" )
-					system( "TITLE ELM327: "+str( self.ser.baudrate )+" b/s" )
+					setConsoleColorWindows( "2F" )
+					setConsoleTitle( "ELM327: "+str( self.ser.baudrate )+" b/s" )
 				# Read OBD information until thread exit
 				straightErrorCount = 0
 				counter = 0 # counts the number of executed sequences

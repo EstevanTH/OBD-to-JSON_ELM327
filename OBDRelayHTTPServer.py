@@ -44,18 +44,21 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 	webSocketClass = None
 	
 	def do_GET( self ):
-		f = self.send_head()
 		try:
+			f = self.send_head()
 			self.copyfile( f, self.wfile )
-		except ConnectionAbortedError:
+		except ConnectionError:
 			return
-		f.close(); del f
+		finally:
+			if f is not None:
+				f.close()
+			del f
 		
 		if self.runWebSocket:
 			try:
 				ws = self.webSocketClass( self )
 				ws.run()
-			except ConnectionAbortedError:
+			except ConnectionError:
 				pass
 			except StopIteration:
 				pass
@@ -64,8 +67,14 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 				return
 	
 	def do_HEAD( self ):
-		f = self.send_head( headersOnly=True )
-		f.close(); del f
+		try:
+			f = self.send_head( headersOnly=True )
+		except ConnectionError:
+			return
+		finally:
+			if f is not None:
+				f.close()
+			del f
 	
 	def send_head( self, headersOnly=False ):
 		headers = {}
@@ -75,12 +84,8 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 			global outputListLock
 			expired = False
 			outputListCopy = None
-			outputListLock.acquire()
-			try:
+			with outputListLock:
 				outputListCopy = outputList.copy()
-			except:
-				pass
-			outputListLock.release()
 			if b"relaytime" not in outputListCopy:
 				expired = True # no data yet
 			elif self.server.thread.cacheExpire==0.0:
