@@ -120,23 +120,19 @@ class OBDRelayELM327Thread( threading.Thread ):
 	def readAnwer( self, errorMessageOnFailure=None, maxBytesToRead=64 ):
 		lines = []
 		# Reading of incoming lines
-		currentLine = []
+		currentLine = bytearray()
 		for numByte in range( maxBytesToRead ):
 			newByte = self.read()
-			newByteInt = None
-			try:
-				newByteInt = newByte[0]
-			except:
-				pass
 			if len( newByte )==0:
 				return False # no prompt (failure)
-			elif newByte==b'\x0D' or newByte==b'>':
-				lines.append( ( b''.join( currentLine ) ).decode( "ascii", "replace" ) )
-				currentLine = []
+			newByteInt = newByte[0]
+			if newByte==b'\x0D' or newByte==b'>':
+				lines.append( currentLine.decode( "ascii", "replace" ) )
+				currentLine = bytearray()
 				if newByte==b'>':
 					break
-			elif newByteInt>0x00 or newByteInt<0x80:
-				currentLine.append( newByte )
+			elif newByteInt>0x00 and newByteInt<0x80:
+				currentLine.extend( newByte )
 		else: # exceeded max length
 			self.read( 255 ) # flush with delay
 			return False
@@ -184,7 +180,7 @@ class OBDRelayELM327Thread( threading.Thread ):
 				raise Exception( "Invalid answer while applying the desired baudrate!" )
 			# Switch baudrate
 			self.ser.baudrate = self.serialBaudRateDesired
-			# Wait for "ELM327" (witout order checking)
+			# Wait for "ELM327" (without order checking)
 			unsupported = False
 			receivedStepsATI = {
 				b'E': False,
