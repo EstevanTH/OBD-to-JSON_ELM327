@@ -42,6 +42,7 @@ class WebSocket():
 	@classmethod
 	def prepareHeaders( self, requestHandler ):
 		requestHandler.close_connection = True # no keep-alive
+		headers = {}
 		
 		# Check that everything is correct
 		
@@ -67,7 +68,6 @@ class WebSocket():
 		
 		# The request is correct, prepare the response
 		
-		headers = {}
 		headers["Upgrade"] = "websocket"
 		headers["Connection"] = "Upgrade"
 		if SecWebSocketVersion!="13":

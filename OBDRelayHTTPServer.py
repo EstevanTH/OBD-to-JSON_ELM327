@@ -44,6 +44,7 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 	webSocketClass = None
 	
 	def do_GET( self ):
+		f = None
 		try:
 			f = self.send_head()
 			self.copyfile( f, self.wfile )
@@ -67,6 +68,7 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 				return
 	
 	def do_HEAD( self ):
+		f = None
 		try:
 			f = self.send_head( headersOnly=True )
 		except ConnectionError:
