@@ -80,8 +80,9 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 	
 	def send_head( self, headersOnly=False ):
 		headers = {}
+		path = self.path.split( "?", 1 )[0]
 		
-		if self.path=="/vehicle.json":
+		if path=="/vehicle.json":
 			global outputList
 			global outputListLock
 			expired = False
@@ -103,7 +104,7 @@ class OBDRelayHTTPRequestHandler( http.server.BaseHTTPRequestHandler ):
 				encoded = b"No available up-to-date data"
 				response = HTTPStatus.GATEWAY_TIMEOUT
 				contentType = "text/plain"
-		elif self.path=="/vehicle.ws":
+		elif path=="/vehicle.ws":
 			self.webSocketClass = WebSocket_vehicle
 			info = WebSocket.prepareHeaders( self )
 			encoded = info["encoded"]
