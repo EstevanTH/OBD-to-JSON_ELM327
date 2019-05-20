@@ -31,3 +31,9 @@ obdLogOutputData = None
 #obdLogOutputData = "logs/logObdData "+datetime.now().strftime( "%Y-%m-%d %H-%M-%S" )+".csv"
 #~ Compact logging format: CSV logging only fills cells with updated values. The updated column does not have its name displayed in a specific cell.
 obdLogOutputDataCompact = False
+#~ Which method to read a specific CAN frame identifier? Can be one of:
+#-- None (bypass CAN frame readings from the sequence)
+#-- "CAF0_CRA_RTR" (for genuine ELM327, not tested: request by ATRTR; interrupt in the event of a looping reading)
+#-- "CAF0_CRA_RTR_STOPPED" (for my Icar01 ELM327 V1.5: faster than "CAF0_CRA_RTR" by always interrupting looping reading)
+obdCanFrameReq11 = None
+obdCanFrameReq29 = None
