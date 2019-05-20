@@ -131,3 +131,7 @@ class OBDLoggingThread( threading.Thread ):
 						except:
 							pass
 			self.parametersLock.release()
+		try:
+			self.logOutputDataFile.close() # properly flush & close with 
+		except:
+			pass
