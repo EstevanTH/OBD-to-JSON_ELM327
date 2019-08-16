@@ -27,4 +27,4 @@ News:
 1. When you are ready to start, run `main.py`.
 
 ## Support
-You can open an issue when you have a question, or see my contact details on my GitHub profile.
+You can open an issue when you have a question, or you can join my Discord server [Yvon à bord !](https://discord.gg/pDasWGC) where you are very welcome, or see my contact details on my GitHub profile.
