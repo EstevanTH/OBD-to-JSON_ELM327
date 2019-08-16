@@ -16,8 +16,8 @@ News:
 
 ## Requirements
 - An OBD scanner featuring an ELM327 chip (preferably connected through bare RS-232 or USB converter)
-- [Python 3.6 or greater, extended to Python3.4](https://www.python.org/downloads/)
-- [pySerial 3.4 or greater](https://github.com/pyserial/pyserial)
+- [Python 3.6 or greater, extended to Python 3.4.4](https://www.python.org/downloads/)
+- [pySerial 3.0.1 or greater](https://github.com/pyserial/pyserial)
 - An OS supported by pySerial
 
 ## Instructions
