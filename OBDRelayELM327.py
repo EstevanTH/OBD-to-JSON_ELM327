@@ -2,6 +2,8 @@
 # Règle de conception : une erreur de communication (sauf expiration) doit toujours engendrer une exception qui entraînera une nouvelle communication.
 # Note: the ELM327 documentation informs that parasitic 0x00 bytes may occasionally be seen on the serial port. They are not ignored as recommended.
 
+# TODO : nouvel objet de requête CAN multiple, utilisation individualisée par configuration => Messages "Capturing CAN identifiers xxx, xxx, xxx together will also capture CAN identifiers xxx, xxx, xxx." avec réglages des trames connues.
+
 
 import threading
 import serial
@@ -304,21 +306,12 @@ class OBDRelayELM327Thread( threading.Thread ):
 	def setPidResponseCallback( self, pid, receivedCallback ):
 		self.pidResponseCallbacks[pid] = receivedCallback
 	def getLastResponseData( self, pid ):
-		value = None
-		try:
-			value = self.lastResponseDatas[pid]
-		except:
-			pass
-		return value
+		return self.lastResponseDatas.get( pid )
 	def getCurrentOutputData( self, key ):
 		global outputList
 		global outputListLock
-		value = None
 		with outputListLock:
-			try:
-				value = outputList[key]
-			except:
-				pass
+			value = outputList.get( key )
 		return value
 	def setCurrentOutputData( self, key, outputData ):
 		global outputList
@@ -367,8 +360,12 @@ class OBDRelayELM327Thread( threading.Thread ):
 				resultData = resultLineBytes[2:( 2+self.pidResponseLengths[resultPid] )]
 				if not self.pidResponseReturnByteArrays[resultPid]:
 					resultData = int.from_bytes( resultData, 'big' )
-				callback = self.pidResponseCallbacks[resultPid]
-				callback( resultPid, resultData )
+				callback = self.pidResponseCallbacks.get( resultPid )
+				if callback is not None:
+					try:
+						callback( resultPid, resultData )
+					except:
+						printT( format_exc() )
 				self.lastResponseDatas[resultPid] = resultData # memorizing to make the value available from other callbacks
 			elif resultType==b"\x7F":
 				# The vehicle reported something. If unsupported then fix the sequence.
@@ -470,9 +467,13 @@ class OBDRelayELM327Thread( threading.Thread ):
 									isReadingCan11 = True
 								resultData = self.obdCanFrameReq11( self, req )
 							if resultData:
-								callback = self.pidResponseCallbacks[req]
-								callback( req.identifier, resultData )
-								del callback
+								callback = self.pidResponseCallbacks.get( req )
+								if callback is not None:
+									try:
+										callback( req.identifier, resultData )
+									except:
+										printT( format_exc() )
+									callback = None
 							req = None
 							resultData = None
 						else:
